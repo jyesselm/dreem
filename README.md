@@ -38,7 +38,7 @@ Steps
 		ii. `bs list projects` -- shows the projects available... check which one you actually want
 		iii. `bs download project -i <ProjectID> -o <output> --extension=fasta.gz` this is the final download that will actually get the files
 2. make RTBfile.fa... => includes all barcodes for the run. Format is below. MUST BE TAB DELIMITED, NO EXTRA LINE AT END
-
+```
 Distance	4
 Format	5
 RTB004	TGCGCCATTGCT
@@ -47,7 +47,7 @@ RTB006	CTGCGTGCAAAC
 RTB007	GATTTGCACCTA
 RTB013	TGGCGAACATGG
 RTB012	GCAAATGTGCTA
-
+```
 3. Run `../installs/novocraft/novobarcode -b RTBbarcodes.fa -f input/*` to get the files split up into barcodes. Note that this has to be done once for sure,
  but will often have to be done twice so that the individual designs in a pool can be separated out.
 

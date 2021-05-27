@@ -1,0 +1,6 @@
+colorlog
+click
+biopython
+plotly
+matplotlib
+pandas

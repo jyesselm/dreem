@@ -23,6 +23,8 @@ log = logger.log
 
 
 class MutationHistogram(object):
+
+
     def __init__(self, name, sequence, data_type, start=None, end=None):
         self.__bases = ["A", "C", "G", "T"]
         self.name = name
@@ -108,6 +110,8 @@ class MutationHistogram(object):
         return data
 
     def get_signal_to_noise(self):
+        # TODO I think there needs to be a change here to ignore the 5p/3p common 
+        # sequence regions
         seq = self.sequence
         AC = 0
         GU = 0
@@ -121,6 +125,35 @@ class MutationHistogram(object):
         AC /= float(AC_count)
         GU /= float(GU_count)
         return round(float(AC / GU), 2)
+    
+    def merge( self, other ):
+        """Merges values from another histogram and ensures the merge is done correctly"""
+        # a whole bunch of checks to make sure all is well 
+        assert self.end == other.end
+        assert self.name == other.name
+        assert self.start == other.start
+        assert self.sequence == other.sequence
+        assert self.structure == other.structure
+        assert self.skips.keys() == other.skips.keys()
+        assert self.mod_bases.keys() == other.mod_bases.keys()
+        assert len(self.num_of_mutations) == len(other.num_of_mutations)
+        # time to start updating the values 
+        self.num_reads += other.num_reads
+        self.num_aligned += other.num_aligned
+        for key in self.skips.keys():
+            self.skips[ key ] += other.skips[ key ]
+        # not sure if this is right but its the only one that isn't 
+        # an np.array
+        for ii in range(len(other.num_of_mutations)):
+            self.num_of_mutations[ ii ] += other.num_of_mutations[ ii ]    
+
+        self.mut_bases += other.mut_bases
+        self.ins_bases += other.ins_bases
+        self.cov_bases += other.cov_bases
+        self.info_bases += other.info_bases
+        
+        for key in self.mod_bases.keys():
+            self.mod_bases[ key ] += other.mod_bases[ key ]
 
 
 # plotting functions ###############################################################
@@ -424,12 +457,14 @@ class BitVectorFileWriter(object):
         self.start = start
         self.end = end
         self.sequence = sequence
-        self.f = open(path + name + "_bitvectors.txt", "w")
+        self.fname = path + name + "_bitvectors.txt"
+        self.f = open(self.fname, "w")
         self.f.write("@ref\t{}\t{}\t{}\n".format(name, sequence, data_type))
         self.f.write(
                 "@coordinates:\t{},{}:{}\n".format(0, len(sequence), len(sequence))
         )
         self.f.write("Query_name\tBit_vector\tN_Mutations\n")
+        self.f.close()
 
     def write_bit_vector(self, q_name, bit_vector):
         n_mutations = 0
@@ -442,7 +477,10 @@ class BitVectorFileWriter(object):
                 if read_bit.isalpha():
                     n_mutations += 1
                 bit_string += read_bit
+        
+        self.f = open(self.fname, 'a') 
         self.f.write("{}\t{}\t{}\n".format(q_name, bit_string, n_mutations))
+        self.f.close()
 
 
 class BitVectorFileReader(object):
@@ -729,3 +767,16 @@ class BitVectorGenerator(object):
             if sur_seq == orig_sur_seq:
                 return True
         return False
+
+def merge_mut_dict( left , right ):
+    """Merges two construct dictionaries. The "left" is updated with the "right" """
+    # CJ: I don't know this code super well so there will be a ton of 
+    # checks to make sure its all goind well.
+    
+    # first off, keys have to be the same
+    assert left.keys() == right.keys()
+
+    for key in left.keys():
+        left[ key ].merge( right[ key ] )
+
+

@@ -1,7 +1,12 @@
+#from __future__ import types
 import os
 import logging
 import yaml
-from future import types
+
+#try:
+#    from future import types
+#except:
+
 from dreem import settings, logger
 
 log = logger.log
@@ -94,6 +99,7 @@ class ParametersFactory(object):
             self.ambig_info = "?"
             self.nomut_bit = "0"
             self.del_bit = "1"
+            self.pickle_only = False
 
             self.description = {
                 'overwrite'            : "overwrite bit vector calculation",
@@ -155,6 +161,8 @@ class ParametersFactory(object):
             p.overwrite = True
             p.map.overwrite = True
             p.bit_vector.overwrite = True
+        if args['pickle_only']:
+            p.bit_vector.pickle_only = True            
         if args['bv_overwrite']:
             p.bit_vector.overwrite = True
         if args['param_file'] is not None:

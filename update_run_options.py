@@ -23,6 +23,10 @@ static = """
                 default="INFO")
 @optgroup.option("-rob", "--restore_org_behavior", is_flag=True, default=False, 
                 help="retores the original behavior of dreem upon first release")
+
+@optgroup.option("--pickle_only", is_flag=True,
+    help="only the mutation histogram is outputted")
+
 """
 
 def get_parameters(obj, name, skip):

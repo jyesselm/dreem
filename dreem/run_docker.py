@@ -79,6 +79,10 @@ def check_docker_image(name):
                 default="INFO")
 @optgroup.option("-rob", "--restore_org_behavior", is_flag=True, default=False, 
                 help="retores the original behavior of dreem upon first release")
+
+@optgroup.option("--pickle_only", is_flag=True,
+    help="only the mutation histogram is outputted")
+
 @optgroup.group("map options")
 @optgroup.option("--map-overwrite", is_flag=True,
 help="overwrite mapping calculation")
@@ -88,13 +92,15 @@ help="do not perform sequence mapping, not recommended")
 help="do not run fastqc for quality control of sequence data")
 @optgroup.option("--skip_trim_galore", is_flag=True,
 help="do not run trim galore to remove adapter sequences at ends")
+@optgroup.option("--tg_q_cutoff", default=None,
+help="TODO")
 @optgroup.option("--bt2_alignment_args", default=None,
-help="")
+help="TODO")
 @optgroup.group("bv options")
-@optgroup.option("--bv-overwrite", is_flag=True,
-help="overwrite bit vector calculation")
 @optgroup.option("--skip", is_flag=True,
 help="skip bit vector generation step, not recommended")
+@optgroup.option("--bv-overwrite", is_flag=True,
+help="overwrite bit vector calculation")
 @optgroup.option("--qscore_cutoff", default=None,
 help="quality score of read nucleotide, sets to ambigious if under this val")
 @optgroup.option("--num_of_surbases", default=None,

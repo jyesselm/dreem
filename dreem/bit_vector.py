@@ -35,7 +35,8 @@ class MutationHistogram(object):
         self.skips = {
             'low_mapq'     : 0,
             'short_read'   : 0,
-            'too_many_muts': 0
+            'too_many_muts': 0,
+            'muts_to_close': 0
         }
         self.num_of_mutations = [0] * (len(sequence) + 1)
         self.mut_bases = np.zeros(len(sequence) + 1)
@@ -59,69 +60,6 @@ class MutationHistogram(object):
     @classmethod
     def from_file(cls, file_name):
         pass
-
-    def to_pop_avg_data_frame(self):
-        cols = "position,mismatches,mismatch_del,nuc"
-        if self.structure is not None:
-            cols += ",struc"
-        df = pd.DataFrame(columns=cols.split(","))
-        pos = 0
-        for i in range(self.start, self.end + 1):
-            try:
-                delmut_frac = (self.del_bases[pos] + self.mut_bases[pos]) / self.info_bases[pos]
-                mut_frac = self.mut_bases[pos] / self.info_bases[pos]
-            except:
-                delmut_frac = 0.0
-                mut_frac = 0.0
-            data = [pos, mut_frac, delmut_frac, self.sequence[pos - 1]]
-            if self.structure is not None:
-                data.append(self.structure[pos - 1])
-            df.loc[pos] = data
-            pos += 1
-        return df
-
-    def record_bit_vector(self, bit_vector, p):
-        self.num_reads += 1
-        self.num_aligned += 1
-        total_muts = 0
-        for pos in range(self.start, self.end + 1):
-            if pos not in bit_vector:
-                continue
-            read_bit = bit_vector[pos]
-            if read_bit != p.bit_vector.ambig_info:
-                self.cov_bases[pos] += 1
-            if read_bit in self.__bases:
-                total_muts += 1
-                self.mod_bases[read_bit][pos] += 1
-                self.mut_bases[pos] += 1
-            elif read_bit == p.bit_vector.del_bit:
-                self.del_bases[pos] += 1
-            self.info_bases[pos] += 1
-        self.num_of_mutations[total_muts] += 1
-
-    def record_skip(self, t):
-        self.num_reads += 1
-        self.skips[t] += 1
-
-    def get_percent_mutations(self):
-        data = np.array(self.num_of_mutations[0:4] + [sum(self.num_of_mutations[5:])])
-        data = [round(x, 2) for x in list((data / self.num_aligned) * 100)]
-        return data
-
-    def get_signal_to_noise(self):
-        seq = self.sequence
-        AC = 0
-        GU = 0
-        AC_count = seq.count("A") + seq.count("C")
-        GU_count = seq.count("G") + seq.count("U") + seq.count("T")
-        for pos in range(self.start, self.end + 1):
-            if seq[pos - 1] == "A" or seq[pos - 1] == "C":
-                AC += self.mut_bases[pos]
-            else:
-                GU += self.mut_bases[pos]
-        AC /= float(AC_count)
-        GU /= float(GU_count)
-        return round(float(AC / GU), 2)
 
     def merge(self, other):
         """Merges values from another histogram and ensures the merge is done correctly"""
@@ -151,6 +89,92 @@ class MutationHistogram(object):
 
         for key in self.mod_bases.keys():
             self.mod_bases[key] += other.mod_bases[key]
+
+    def record_bit_vector(self, bit_vector, p):
+        self.num_reads += 1
+        self.num_aligned += 1
+        total_muts = 0
+        for pos in range(self.start, self.end + 1):
+            if pos not in bit_vector:
+                continue
+            read_bit = bit_vector[pos]
+            if read_bit != p.bit_vector.ambig_info:
+                self.cov_bases[pos] += 1
+            if read_bit in self.__bases:
+                total_muts += 1
+                self.mod_bases[read_bit][pos] += 1
+                self.mut_bases[pos] += 1
+            elif read_bit == p.bit_vector.del_bit:
+                self.del_bases[pos] += 1
+            self.info_bases[pos] += 1
+        self.num_of_mutations[total_muts] += 1
+
+    def record_skip(self, t):
+        self.num_reads += 1
+        self.skips[t] += 1
+
+    # getting functions ###############################################################
+
+    def get_percent_mutations(self):
+        data = np.array(self.num_of_mutations[0:4] + [sum(self.num_of_mutations[5:])])
+        data = [round(x, 2) for x in list((data / self.num_aligned) * 100)]
+        return data
+
+    def get_signal_to_noise(self):
+        seq = self.sequence
+        AC = 0
+        GU = 0
+        AC_count = seq.count("A") + seq.count("C")
+        GU_count = seq.count("G") + seq.count("U") + seq.count("T")
+        for pos in range(self.start, self.end + 1):
+            if seq[pos - 1] == "A" or seq[pos - 1] == "C":
+                AC += self.mut_bases[pos]
+            else:
+                GU += self.mut_bases[pos]
+        AC /= float(AC_count)
+        GU /= float(GU_count)
+        return round(float(AC / GU), 2)
+
+    def get_pop_avg_data_frame(self):
+        cols = "position,mismatches,mismatch_del,nuc"
+        if self.structure is not None:
+            cols += ",struc"
+        df = pd.DataFrame(columns=cols.split(","))
+        pos = 1
+        for i in range(self.start, self.end + 1):
+            if self.info_bases[pos] != 0:
+                delmut_frac = (self.del_bases[pos] + self.mut_bases[pos]) / self.info_bases[pos]
+                mut_frac = self.mut_bases[pos] / self.info_bases[pos]
+            else:
+                delmut_frac = 0.0
+                mut_frac = 0.0
+            data = [pos, mut_frac, delmut_frac, self.sequence[pos - 1]]
+            if self.structure is not None:
+                data.append(self.structure[pos - 1])
+            df.loc[pos] = data
+            pos += 1
+        return df
+
+    def get_pop_avg(self):
+        pos = 1
+        data = []
+        for i in range(self.start, self.end + 1):
+            if self.info_bases[pos] != 0:
+                mut_frac = self.mut_bases[pos] / self.info_bases[pos]
+            else:
+                mut_frac = 0.0
+            data.append(mut_frac)
+            pos += 1
+        return data
+
+    def get_avg_ac_reactivity(self):
+        avg, total = 0.0, 0.0
+        pop_avg = self.get_pop_avg()
+        for s, d in zip(self.sequence, pop_avg):
+            if s == 'A' or s == 'C':
+                avg += d
+                total += 1
+        return avg / total
 
 
 # plotting functions ###############################################################
@@ -352,8 +376,9 @@ def plot_population_avg(mh: MutationHistogram, p: Parameters):
     mut_fig_layout = go.Layout(
             title=mh.name,
             xaxis=dict(title="Postion"),
-            yaxis=dict(title="Fraction", range=[0, 0.1]),
-            plot_bgcolor="white"
+            yaxis=dict(title="Fraction"),
+            plot_bgcolor="white",
+            height=400
 
     )
     mut_fig = go.Figure(data=mut_trace, layout=mut_fig_layout)
@@ -383,6 +408,7 @@ def plot_population_avg(mh: MutationHistogram, p: Parameters):
     plotly.offline.plot(
             mut_fig, filename=file_base_name + "pop_avg.html", auto_open=False,
     )
+    mut_fig.write_image(file_base_name + "pop_avg.png", height=400, width=1000)
 
 
 # analysis functions ###############################################################
@@ -648,14 +674,30 @@ class BitVectorGenerator(object):
         if p1 < self._p.bit_vector.percent_length_cutoff or p2 < self._p.bit_vector.percent_length_cutoff:
             mh.record_skip("short_read")
             return None
+        # if len(bit_vector_1) < 130:
+        #    mh.record_skip("short_read")
+        #    return None
         bit_vector = self.__merge_paired_bit_vectors(bit_vector_1, bit_vector_2)
         muts = 0
+        muts_to_close = False
         for pos in range(mh.start, mh.end + 1):
             if pos not in bit_vector:
                 continue
             read_bit = bit_vector[pos]
             if read_bit in self.__bases:
                 muts += 1
+                for pos2 in range(pos - 5, pos + 5):
+                    if pos2 == pos:
+                        continue
+                    if pos2 not in bit_vector:
+                        continue
+                    if bit_vector[pos2] in self.__bases:
+                        muts_to_close = True
+                        break
+
+        if muts_to_close:
+            mh.record_skip("muts_to_close")
+            return None
         if muts > self._p.bit_vector.mutation_count_cutoff:
             mh.record_skip("too_many_muts")
             return None

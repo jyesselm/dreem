@@ -1,0 +1,39 @@
+[2022-01-30 21:47:55,423 bit_vector.py run] INFO ran at commandline as: 
+[2022-01-30 21:47:55,424 bit_vector.py run] INFO /Users/jyesselm/miniconda3/envs/py3/bin/dreem -fa test/resources/case_1/test.fasta -fq1 test/resources/case_1/test_mate1.fastq -fq2 test/resources/case_1/test_mate2.fastq
+[2022-01-30 21:47:55,424 bit_vector.py validate_files] INFO fasta file: test/resources/case_1/test.fasta exists
+[2022-01-30 21:47:55,424 bit_vector.py validate_files] INFO fastq file: test/resources/case_1/test_mate1.fastq exists
+[2022-01-30 21:47:55,424 bit_vector.py validate_files] INFO fastq2 file: test/resources/case_1/test_mate2.fastq exists
+[2022-01-30 21:47:55,424 bit_vector.py validate_files] INFO two fastq files supplied, thus assuming paired reads
+[2022-01-30 21:47:55,424 bit_vector.py build_directories] INFO building directory structure
+[2022-01-30 21:47:55,459 mapper.py __init__] INFO bowtie2 2.4.5 detected!
+[2022-01-30 21:47:55,534 mapper.py __init__] INFO fastqc v0.11.9 detected!
+[2022-01-30 21:47:55,559 mapper.py __init__] INFO trim_galore 0.6.6 detected!
+[2022-01-30 21:47:55,602 mapper.py __init__] INFO cutapt 1.18 detected!
+[2022-01-30 21:47:55,603 mapper.py __skip_without_overwrite] INFO SKIPPING fastqc, it has been run already! specify -overwrite to rerun
+[2022-01-30 21:47:55,603 mapper.py __skip_without_overwrite] INFO SKIPPING trim_galore, it has been run already! specify -overwrite to rerun
+[2022-01-30 21:47:55,603 mapper.py __run_command] INFO running bowtie2-build
+[2022-01-30 21:47:57,743 mapper.py __run_command] INFO bowtie2-build ran without errors
+[2022-01-30 21:47:57,744 mapper.py __run_bowtie_alignment] INFO --local --no-unal --no-discordant --no-mixed -X 1000 -L 12 -p 16
+[2022-01-30 21:47:57,744 mapper.py __run_command] INFO running bowtie2 alignment
+[2022-01-30 21:47:57,982 mapper.py __run_command] INFO bowtie2 alignment ran without errors
+[2022-01-30 21:47:57,983 mapper.py __run_bowtie_alignment] INFO results for bowtie alignment: 
+2500 reads; of these:
+  2500 (100.00%) were paired; of these:
+    168 (6.72%) aligned concordantly 0 times
+    2331 (93.24%) aligned concordantly exactly 1 time
+    1 (0.04%) aligned concordantly >1 times
+93.28% overall alignment rate
+[2022-01-30 21:47:57,983 mapper.py __run_picard_bam_convert] INFO Converting BAM file to SAM file format
+[2022-01-30 21:47:57,983 mapper.py __run_command] INFO running picard BAM conversion
+[2022-01-30 21:47:58,568 mapper.py __run_command] INFO picard BAM conversion ran without errors
+[2022-01-30 21:47:58,568 mapper.py __run_picard_sort] INFO sorting BAM file
+[2022-01-30 21:47:58,568 mapper.py __run_command] INFO running picard BAM sort
+[2022-01-30 21:47:58,975 mapper.py __run_command] INFO picard BAM sort ran without errors
+[2022-01-30 21:47:58,976 mapper.py run] INFO finished mapping!
+[2022-01-30 21:47:58,976 bit_vector.py run] INFO starting bitvector generation
+[2022-01-30 21:47:58,980 bit_vector.py __run_command] INFO running picard SAM convert
+[2022-01-30 21:47:59,355 bit_vector.py __run_command] INFO picard SAM convert ran without errors
+[2022-01-30 21:48:00,287 bit_vector.py run] INFO MUTATION SUMMARY:
+| name          |   reads |   aligned |   no_mut |   1_mut |   2_mut |   3_mut |   3plus_mut |   sn |
+|---------------|---------|-----------|----------|---------|---------|---------|-------------|------|
+| mttr-6-alt-h3 |    2332 |     98.93 |     46.9 |   37.19 |   12.79 |    2.73 |        0.04 | 8.18 |

@@ -163,6 +163,7 @@ class Mapper(object):
         # check to make sure bt2 args are valid
         self.__validate_bt2_args(self._p.map.bt2_alignment_args)
         bt2_args = " ".join(self._p.map.bt2_alignment_args.split(";"))
+        log.info(bt2_args)
         if self._p.paired:
             bowtie2_cmd = (
                     "bowtie2 " + bt2_args + " -x {btindex} -1 {fq1} -2 {fq2} -S {samfile}"

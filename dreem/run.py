@@ -6,7 +6,7 @@ import shutil
 import click
 from click_option_group import optgroup
 
-from dreem import settings, logger, mapping, bit_vector
+from dreem import settings, logger, mapping, bit_vector, rnastructure
 from dreem.parameters import *
 from dreem.util import *
 
@@ -44,8 +44,10 @@ def build_directories(p: Parameters):
 @optgroup.option("-fq2", "--fastq2", type=click.Path(exists=True),
                  help="fastq sequencing file of mate 2", default=None)
 @optgroup.group("common options")
-@optgroup.option("--dot_bracket", type=click.Path(exists=True),
-                 help="A csv formatted file that contains dot bracket info for each sequence")
+@optgroup.option("--sample_info", type=click.Path(exists=True),
+                 help="A csv formatted file that contains additional info about your sample. Must contain a sample column. The sample column identifies which row corresponds to your sample.")
+@optgroup.option("--library_info", type=click.Path(exists=True),
+                 help="A csv formatted file that contains additional info about your constructs. Must contain a name column. The name column identifies which row corresponds to which construct.")
 @optgroup.option("-pf", "--param-file", type=click.Path(exists=True),
                  help="A yml formatted file to specify parameters")
 @optgroup.option("-ow", "--overwrite", is_flag=True,
@@ -87,6 +89,20 @@ def build_directories(p: Parameters):
                  help="")
 @optgroup.option("--plot_sequence", is_flag=True,
                  help="")
+@optgroup.option("--RNAstructure_path", default=None,
+                 help="A path to the location of the RNAstructure folder on your machine")
+@optgroup.option("--RNAstructure_args", default='-d',
+                 help="(string) the arguments to add to the RNAstructure command")
+@optgroup.option("--temperature", default=False, is_flag=True,
+                 help="(flag) use temperature as an argument for RNAstructure")
+@optgroup.option("--sample", default='CONTAINING FOLDER',
+                 help="(string) sample name, default is the containing folder of the fasta/fastq files")
+@optgroup.option("--add_any_info", default=False, is_flag=True,
+                 help="(flag) additional content can contain columns that aren't attributes of bit_vector")
+@optgroup.option("--bootstrap", default=False, is_flag=True,
+                 help="(flag) perform bootstrap on each residue across each sample-construct")
+
+
 def main(**args):
     """
     DREEM processes DMS next generation sequencing data to produce mutational
@@ -102,6 +118,7 @@ def run(args):
     log.setLevel(logger.str_to_log_level(args["log_level"]))
     # setup parameters
     setup_parameters(args)
+    log_inputs()
     p = get_parameters()
     build_directories(p)
     p.to_yaml_file(p.dirs.log + "/parameters.yml")
@@ -111,6 +128,7 @@ def run(args):
     # convert aligned reads to bit vectors
     bt = bit_vector.BitVectorGenerator()
     bt.run(p)
+
 
 
 if __name__ == "__main__":

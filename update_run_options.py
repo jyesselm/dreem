@@ -12,8 +12,8 @@ static = """
 @optgroup.option("-fq2", "--fastq2", type=click.Path(exists=True),
                  help="fastq sequencing file of mate 2", default=None)
 @optgroup.group("common options")
-@optgroup.option("--dot_bracket", type=click.Path(exists=True),
-                help="A csv formatted file that contains dot bracket info for each sequence")
+@optgroup.option("--additional_info", type=click.Path(exists=True),
+                help="A csv formatted file that contains additional info for each sequence. Must contain a ref_fasta, a fastq1 and a fastq2 column.")
 @optgroup.option("-pf", "--param-file", type=click.Path(exists=True),
                 help="A yml formatted file to specify parameters")
 @optgroup.option("-ow", "--overwrite", is_flag=True,

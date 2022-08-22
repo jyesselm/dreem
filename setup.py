@@ -43,7 +43,8 @@ setup(
         'dreem/parameters',
         'dreem/run',
         'dreem/settings',
-        'dreem/util'
+        'dreem/util',
+        'dreem/rnastructure'
     ],
     include_package_data=True,
     install_requires=requirements,

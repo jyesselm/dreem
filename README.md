@@ -71,8 +71,9 @@ Options:
     -fq1, --fastq1 PATH           fastq sequencing file of mate 1  [required]
     -fq2, --fastq2 PATH           fastq sequencing file of mate 2
   common options: 
-    --dot_bracket PATH            A csv formatted file that contains dot
-                                  bracket info for each sequence
+    --additional_info PATH        A csv formatted file that contains additional
+                                  info for each sequence. Must contain a
+                                  ref_fasta, a fastq1 and a fastq2 column.
     -pf, --param-file PATH        A yml formatted file to specify parameters
     -ow, --overwrite              overwrites previous results, if not set will
                                   keep previous calculation checkpoints

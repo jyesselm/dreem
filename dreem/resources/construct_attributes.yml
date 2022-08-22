@@ -1,0 +1,24 @@
+mandatory:
+  - sample
+  - name
+  - sequence
+  - flank
+optional:
+  - ROI_start
+  - ROI_stop
+rnastructure:
+  - sequence_ROI
+  - deltaG_min
+  - deltaG_min_DMS
+  - deltaG_min_ROI
+  - deltaG_min_ROI_DMS
+  - deltaG_ens
+  - deltaG_ens_ROI
+  - structure
+  - structure_ROI
+  - structure_DMS
+  - structure_ROI_DMS
+bootstrap:
+  - bootstrap_low
+  - bootstrap_high
+  - bootstrap_std

@@ -1,2 +1,2 @@
-name,sequence,structure
-mttr-6-alt-h3,GGAAGAUCGAGUAGAUCAAAGGACGUAUGGCGGGCGGCCGAGACCCCGAACUACGAGGAACAGAGGAAACUCUACCCCUCGCGGGGUCGUUUGACGCCGCCCGCCUAAGCGUCCAAAGAAACAACAACAACAAC,....((((.....))))...((((((..((((((((((((((((((((.....(((((...((((....))))...))))))))))))..)))..))))))))))...))))))....................
+sample,name,sequence,flank,temperature,non_standard,ROI_start,ROI_stop,exp_env
+case_1,mttr-6-alt-h3,GGAAGATCGAGTAGATCAAAGGACGTATGGCGGGCGGCCGAGACCCCGAACTACGAGGAACAGAGGAAACTCTACCCCTCGCGGGGTCGTTTGACGCCGCCCGCCTAAGCGTCCAAAGAAACAACAACAACAAC,flank3,300,8,20,90,in_vivo

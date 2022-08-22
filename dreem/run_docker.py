@@ -68,8 +68,10 @@ def check_docker_image(name):
 @optgroup.option("-fq2", "--fastq2", type=click.Path(exists=True),
                  help="fastq sequencing file of mate 2", default=None)
 @optgroup.group("common options")
-@optgroup.option("--dot_bracket", type=click.Path(exists=True),
-                help="A csv formatted file that contains dot bracket info for each sequence")
+@optgroup.option("--sample_info", type=click.Path(exists=True),
+                 help="A csv formatted file that contains additional info about your sample. Must contain a sample column. The sample column identifies whcih row corresponds to your sample.")
+@optgroup.option("--library_info", type=click.Path(exists=True),
+                 help="A csv formatted file that contains additional info about your constructs. Must contain a name column. The name column identifies which row corresponds to which construct.")
 @optgroup.option("-pf", "--param-file", type=click.Path(exists=True),
                 help="A yml formatted file to specify parameters")
 @optgroup.option("-ow", "--overwrite", is_flag=True,
@@ -111,6 +113,22 @@ help="read is discarded if less than this percent of a ref sequence is included"
 help="")
 @optgroup.option("--plot_sequence", is_flag=True,
 help="")
+@optgroup.option("--RNAstructure_path", default=None,
+                 help="A path to the location of the RNAstructure folder on your machine")
+@optgroup.option("--RNAstructure_args", default='-d',
+                 help="(string) the arguments to add to the RNAstructure command. Can't be -dms")
+@optgroup.option("--temperature", default=False, is_flag=True,
+                 help="(bool) use temperature as an argument for RNAstructure")
+@optgroup.option("--sample", default='CONTAINING FOLDER',
+                 help="(string) sample name, default is the containing folder of the fasta/fastq files")
+
+@optgroup.option("--add_any_info", default=False, is_flag=True,
+                 help="(flag) additional content can contain columns that aren't attributes of bit_vector")
+@optgroup.option("--bootstrap", default=False, is_flag=True,
+                 help="(flag) perform bootstrap on each residue across each sample-construct")
+
+
+
 def main(**args):
     """
     DREEM processes DMS next generation sequencing data to produce mutational
@@ -125,9 +143,9 @@ def main(**args):
             log.error("cannot find docker image. Make sure you have it built or downloaded")
             exit()
     cmd = "docker run "
-    files = "fasta,fastq1,fastq2,dot_bracket,param_file".split(",")
+    files = "fasta,fastq1,fastq2,additional_info,param_file".split(",")
     file_map = {
-        'dot_bracket'        : 'test.csv',
+        'additional_info'        : 'test.csv',
         'param_file': 'test.param',
         'fasta'     : 'test.fasta',
         'fastq1'    : 'test_mate1.fastq',

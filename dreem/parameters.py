@@ -3,6 +3,7 @@ import logging
 import yaml
 from future import types
 from dreem import settings, logger
+from datetime import datetime
 
 log = logger.log
 log_error_and_exit = logger.log_error_and_exit
@@ -25,7 +26,12 @@ class ParametersFactory(object):
                 self.fastq2 = paths[2]  # fastq2 input file
             else:
                 self.fastq2 = None
-            self.dot_bracket = None
+            self.sample_info = None  # samples.csv path
+            self.RNAstructure_path = ''
+            self.RNAstructure_args = '' 
+            self.sample = None 
+            self.temperature=False
+            self.bootstrap = False
 
         def __get_name(self, path):
             fname = path.split("/")[-1]
@@ -45,13 +51,13 @@ class ParametersFactory(object):
             return self.__get_name(self.fastq2)
 
     class _Dirs(object):
-        def __init__(self):
-            self.resources = settings.get_py_path() + "/resources/"
+        def __init__(self, inputs):
+            self.resources = settings.get_py_path() + "resources/"
             self.input = "input/"
-            self.output = "output/"
-            self.log = "log/"
-            self.mapping = self.output + "Mapping_Files/"
-            self.bitvector = self.output + "BitVector_Files/"
+            self.output = "output/"+ inputs.sample+'/'
+            self.log = "log/"+inputs.sample+'/'
+            self.mapping = self.output +"/Mapping_Files/"
+            self.bitvector = self.output + "/BitVector_Files/"
             self.cluster = self.output + "/"
 
     class _Files(object):
@@ -68,7 +74,7 @@ class ParametersFactory(object):
             self.picard_bam_output = dirs.mapping + "aligned.bam"
             self.picard_sam_output = dirs.mapping + "converted.sam"
             self.picard_sorted_bam_output = dirs.mapping + "aligned_sorted.bam"
-            self.picard_metrics_output = dirs.mapping + "metrics.txt"
+            self.picard_metrics_output = dirs.mapping + "metrics.txt"     
 
     class _Map(object):
         def __init__(self):
@@ -156,9 +162,27 @@ class ParametersFactory(object):
     def get_parameters(self, args):
         input_files = validate_files(args)
         inputs = ParametersFactory._Inputs(input_files)
-        if 'dot_bracket' in args:
-            inputs.dot_bracket = args["dot_bracket"]
-        dirs = ParametersFactory._Dirs()
+        if 'sample_info' in args:
+            inputs.sample_info = args["sample_info"]
+        if 'library_info' in args:
+            inputs.library_info = args["library_info"]
+        if 'rnastructure_path' in args:
+            if args["rnastructure_path"][-1] != '/':
+                inputs.RNAstructure_path = args["rnastructure_path"]+'/'
+            else:
+                inputs.RNAstructure_path = args["rnastructure_path"]
+        if 'rnastructure_args' in args:
+            inputs.RNAstructure_args = args["rnastructure_args"]
+        if args['sample'] != 'CONTAINING FOLDER':
+            inputs.sample = args['sample']
+        else:
+            inputs.sample = args['fasta'].split('/')[-2]
+        inputs.temperature = args['temperature']
+        inputs.add_any_info = args['add_any_info']
+        inputs.bootstrap = args['bootstrap']
+
+
+        dirs = ParametersFactory._Dirs(inputs)
         files = ParametersFactory._Files(dirs, inputs)
         p = Parameters(inputs, dirs, files)
         if args['fastq2'] is not None:
@@ -282,3 +306,18 @@ def setup_parameters(args):
     parameters = pf.get_parameters(args)
 
     # p.update("map.fastqc", False)
+
+
+def log_inputs():
+    p = get_parameters()
+    f = open('log/inputs.txt','a')
+    csv = open('log/inputs.csv','a')
+    f.write(f"--------------------------\n{datetime.now()}\n")
+    csv.write(f"\n{datetime.now()},")
+
+    args = p.ins.__dict__
+    for val, key in args.items():
+        f.write(f"{val} {(30-len(val))*'_'} {key} \n")
+        csv.write(f"{v{key}")
+    f.write('\n \n')
+    f.close()

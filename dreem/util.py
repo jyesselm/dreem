@@ -12,7 +12,7 @@ def safe_rmdir(dir_name):
 
 def safe_mkdir(dir_name):
     if not os.path.isdir(dir_name):
-        os.mkdir(dir_name)
+        os.makedirs(dir_name)
 
 
 def run_command(cmd):

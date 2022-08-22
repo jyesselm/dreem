@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import pickle
 import random
+import yaml
 import datetime
 from typing import Dict, List
 
@@ -15,21 +16,33 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from tabulate import tabulate
 
-from dreem import settings, sam, logger
-from dreem.parameters import Parameters
+from dreem import settings, sam, logger, rnastructure, bootstrap
+from dreem.parameters import Parameters, get_parameters
 from dreem.util import *
 from dreem.sam import *
 
 log = logger.log
 
+PATH_TO_SAMP_ATTR = 'dreem/resources/sample_attributes.yml'
+PATH_TO_CONS_ATTR = 'dreem/resources/construct_attributes.yml'
+
 
 class MutationHistogram(object):
     def __init__(self, name, sequence, data_type, start=None, end=None):
         self.__bases = ["A", "C", "G", "T"]
+
+        # construct info
         self.name = name
         self.sequence = sequence
-        self.structure = None
+        self.ROI_start = None
+        self.ROI_stop = None
+
+        # sample info
         self.data_type = data_type
+        if hasattr(get_parameters().ins,'sample_info'):
+            self.aggregate_sample_info()
+
+        # sample-construct info
         self.num_reads = 0
         self.num_aligned = 0
         self.skips = {
@@ -59,6 +72,39 @@ class MutationHistogram(object):
     @classmethod
     def from_file(cls, file_name):
         pass
+
+    def aggregate_sample_info(self):
+        def read_authorised_attr(exp_env):
+            with open(PATH_TO_SAMP_ATTR, "r") as stream:
+                yaml_file = yaml.safe_load(stream)
+    
+            mandatory = yaml_file['mandatory']['all'] + yaml_file['mandatory'][exp_env]
+            optional = yaml_file['optional']['all'] + [yaml_file['optional'][exp_env] if yaml_file['optional'][exp_env] != None else []][0]
+            return mandatory, optional
+                
+        # Add additional info
+        p = get_parameters()
+        if p.ins.sample_info is not None:
+            df = pd.read_csv(p.ins.sample_info)
+            df_sample = df[[bool(s == p.ins.sample) for s in df['sample']]]
+            assert not df_sample.empty, f"No additional information for sample {p.ins.sample}"
+            assert len(df_sample.index) == 1, f"More than one line corresponding to the sample {p.ins.fastq1}"
+            row = df_sample.iloc[0]
+            assert row['exp_env'] in ['in_vivo','in_vitro'], f"{row['exp_env']} is not a valid argument for env_exp. Please set env_exp to in_vivo or in_vitro."
+     
+            mandatory_attr, optional_attr = read_authorised_attr(row['exp_env'])
+            for m in mandatory_attr:
+                assert (m in df_sample.columns) and row[m]!= None, f"{m} is a mandatory attribute that's missing in {p.ins.sample_info}. Add this mandatory attribute to your addidtional information file."
+            valid_cols = list(set(df_sample.columns)&set(mandatory_attr+optional_attr))
+            unvalid_cols = set(df_sample.columns) - set(valid_cols)
+   
+            if len(unvalid_cols)!=0:
+                print(Warning(f"WARNING: when adding additional info, columns {list(unvalid_cols)} were ignored."))
+
+            valid_cols.sort()
+            for col in valid_cols:
+                setattr(self, col, row[col])
+
 
     def to_pop_avg_data_frame(self):
         cols = "position,mismatches,mismatch_del,nuc"
@@ -523,6 +569,14 @@ class BitVectorGenerator(object):
         log.setLevel(p.log_level)
         self.__run_picard_sam_convert()
         self.__generate_all_bit_vectors()
+        if self._p.ins.bootstrap:
+            self.__aggregate_bootstrap()
+        if hasattr(self._p.ins, 'library_info'):
+            self.__aggregate_construct_info()
+        if hasattr(self._p.ins, 'RNAstructure_path'):
+            self.__aggregate_RNAstructure()
+        self.__aggregate_computational_args()
+        self.__dump_mutation_histos()
         for mh in self._mut_histos.values():
             if not p.bit_vector.summary_output_only:
                 plot_population_avg(mh, p)
@@ -585,13 +639,71 @@ class BitVectorGenerator(object):
                 bit_vector = self.__get_bit_vector_paired(read[0], read[1])
             else:
                 bit_vector = self.__get_bit_vector_single(read[0])
+        
+    def __add_cols_to_bitVector(self, df, skip_cols=[], bypass_column_check=False):
+        for _, row in df.iterrows():
+            if row["name"] in self._mut_histos:
+                for col in df.drop(columns=['name']+skip_cols).columns:
+                    if hasattr(self._mut_histos[row["name"]], col) or self._p.ins.add_any_info or bypass_column_check:
+                        setattr(self._mut_histos[row["name"]], col, row[col])   
 
-        if self._p.ins.dot_bracket is not None:
-            df = pd.read_csv(self._p.ins.dot_bracket)
-            for i, row in df.iterrows():
-                if row["name"] in self._mut_histos:
-                    self._mut_histos[row["name"]].structure = row["structure"]
-        f = open(self._p.dirs.bitvector + "mutation_histos.p", "wb")
+    def __aggregate_bootstrap(self):
+        with open(PATH_TO_CONS_ATTR, "r") as stream:
+            yaml_file = yaml.safe_load(stream)
+        for attr in yaml_file['bootstrap']:
+            for _, mh in self._mut_histos.items():
+                setattr(mh,attr,None)
+        boot = bootstrap.Bootstrap()
+        for mh in self._mut_histos:
+            boot_output = boot.run(self._p.dirs.bitvector+mh+'_bitvectors.txt')
+            for key, val in boot_output.items():
+                setattr(self._mut_histos[mh], key, list(val)) 
+
+    def __aggregate_RNAstructure(self):
+        # add structure + min_deltaG
+
+        with open(PATH_TO_CONS_ATTR, "r") as stream:
+            yaml_file = yaml.safe_load(stream)
+        for attr in yaml_file['rnastructure']:
+            for _, mh in self._mut_histos.items():
+                setattr(mh,attr,None)
+
+        if self._p.ins.RNAstructure_path is not None:
+            rna = rnastructure.RNAstructure()
+            for mh in self._mut_histos.values():
+                self.__add_cols_to_bitVector(pd.DataFrame(rna.run(mh, cmd='Fold'), index=[0]))
+                self.__add_cols_to_bitVector(pd.DataFrame(rna.run(mh, cmd='EnsembleEnergy'), index=[0]))
+                self.__add_cols_to_bitVector(pd.DataFrame(rna.run(mh, cmd='partition'), index=[0]))
+                start, stop = mh.ROI_start, mh.ROI_stop
+                if start != None and stop != None:
+                    self.__add_cols_to_bitVector(pd.DataFrame(rna.run(mh, roi=[start,stop], cmd='Fold'), index=[0]))
+                    self.__add_cols_to_bitVector(pd.DataFrame(rna.run(mh, roi=[start,stop], cmd='EnsembleEnergy'), index=[0]))
+                    
+    def __aggregate_construct_info(self):
+        def read_authorised_attr():
+            with open(PATH_TO_CONS_ATTR, "r") as stream:
+                yaml_file = yaml.safe_load(stream)
+            mandatory, optional = yaml_file['mandatory'], yaml_file['optional'] if yaml_file['optional'] != None else []
+            return mandatory, optional
+
+        if self._p.ins.sample_info is not None:
+            df = pd.read_csv(self._p.ins.library_info)
+            mandatory, optional = read_authorised_attr()
+            for _, row in df.iterrows():
+                for m in mandatory:
+                    assert (m in df.columns) and row[m]!= None, f"{m} is a mandatory attribute that's missing in {self._p.ins.sample_info}. Add this mandatory attribute to your addidtional information file."
+            
+            if not self._p.ins.add_any_info:
+                df = df[list(set(df.columns)&set(mandatory+optional))]
+
+            self.__add_cols_to_bitVector(df, bypass_column_check=True)
+    
+    def __aggregate_computational_args(self):
+        for mh in self._mut_histos.values():
+            mh.use_temperature_for_rnastructure = self._p.ins.temperature
+        
+    def __dump_mutation_histos(self):
+        f = open(self._p.dirs.bitvector + "/mutation_histos.p", "wb")
         pickle.dump(self._mut_histos, f)
 
     def __get_bit_vector_single(self, read):

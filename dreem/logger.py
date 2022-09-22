@@ -2,16 +2,29 @@ import os
 import logging
 import colorlog
 
+APP_LOGGER_NAME = "dreem"
+
+
 class DreemError(Exception):
     pass
 
-def init_logger(dunder_name, log_outfile=None, testing_mode=False, start=False) -> logging.Logger:
+
+def setup_applevel_logger(
+    logger_name=APP_LOGGER_NAME,
+    log_outfile=None,
+    testing_mode=False,
+    start=False,
+) -> logging.Logger:
     log_format = (
-        "[%(asctime)s " "%(name)s " "%(funcName)s] " "%(levelname)s " "%(message)s"
+        "[%(asctime)s "
+        "%(name)s "
+        "%(funcName)s] "
+        "%(levelname)s "
+        "%(message)s"
     )
     bold_seq = "\033[1m"
     colorlog_format = f"{bold_seq}" "%(log_color)s" f"{log_format}"
-    logger = logging.getLogger(dunder_name)
+    logger = logging.getLogger(logger_name)
     # colorlog.basicConfig(format=colorlog_format, datefmt="%H:%M")
     handler = colorlog.StreamHandler()
     handler.setFormatter(
@@ -27,7 +40,6 @@ def init_logger(dunder_name, log_outfile=None, testing_mode=False, start=False) 
             },
         )
     )
-
     logger.addHandler(handler)
 
     if log_outfile is not None:
@@ -44,6 +56,10 @@ def init_logger(dunder_name, log_outfile=None, testing_mode=False, start=False) 
         logger.setLevel(logging.INFO)
 
     return logger
+
+
+def get_logger(module_name):
+    return logging.getLogger(APP_LOGGER_NAME).getChild(module_name)
 
 
 def log_error_and_exit(log, msg):
@@ -65,5 +81,3 @@ def str_to_log_level(s: str):
         return logging.CRITICAL
     else:
         raise ValueError("unknown log level: {}".format(s))
-
-log = init_logger("bit_vector.py", "dreem.log", start=True)

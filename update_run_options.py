@@ -25,19 +25,20 @@ static = """
                 help="retores the original behavior of dreem upon first release")
 """
 
+
 def get_parameters(obj, name, skip):
     args = obj.__dict__
-    s = f"@optgroup.group(\"{name} options\")\n"
+    s = f'@optgroup.group("{name} options")\n'
     for k, v in args.items():
         if k in skip:
             continue
         if type(v) == bool:
             if k == "overwrite":
-                s += f"@optgroup.option(\"--{name}-{k}\", is_flag=True,\nhelp=\"{obj.description[k]}\")\n"
+                s += f'@optgroup.option("--{name}-{k}", is_flag=True,\nhelp="{obj.description[k]}")\n'
             else:
-                s += f"@optgroup.option(\"--{k}\", is_flag=True,\nhelp=\"{obj.description[k]}\")\n"
+                s += f'@optgroup.option("--{k}", is_flag=True,\nhelp="{obj.description[k]}")\n'
         else:
-            s += f"@optgroup.option(\"--{k}\", default=None,\nhelp=\"{obj.description[k]}\")\n"
+            s += f'@optgroup.option("--{k}", default=None,\nhelp="{obj.description[k]}")\n'
     return s
 
 
@@ -47,17 +48,23 @@ def update_options_for_script(script_path):
     lines = f.readlines()
     f.close()
     s = "".join(lines)
-    spl = re.split('@click.command\(\)[\S\s]+def main\(\*\*args\)\:', s)
+    spl = re.split("@click.command\(\)[\S\s]+def main\(\*\*args\)\:", s)
     f = open(script_path, "w")
     f.write(spl[0])
     f.write("@click.command()\n")
     f.write(static)
     f.write(get_parameters(pf._Map(), "map", "description".split(",")))
-    f.write(get_parameters(pf._BitVector(), "bv",
-                           "description,miss_info,ambig_info,nomut_bit,del_bit".split(",")))
+    f.write(
+        get_parameters(
+            pf._BitVector(),
+            "bv",
+            "description,miss_info,ambig_info,nomut_bit,del_bit".split(","),
+        )
+    )
     f.write("def main(**args):")
     f.write(spl[1])
     f.close()
+
 
 def main():
     run_py_file_path = settings.get_py_path() + "/run.py"

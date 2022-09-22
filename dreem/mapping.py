@@ -5,7 +5,7 @@ from dreem.parameters import *
 from dreem.logger import *
 from dreem.util import *
 
-log = init_logger("mapper.py", "dreem.log")
+log = get_logger("mapper.py")
 
 class DreemMappingError(Exception):
     pass

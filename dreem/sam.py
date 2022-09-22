@@ -1,14 +1,15 @@
-from dreem import settings
-from dreem.logger import *
+from dreem import settings, logger
 
-log = init_logger("sam.py")
+log = logger.get_logger("sam.py")
 
 
 class AlignedRead:
     def __init__(self, line):
         line_split = line.split()
         if len(line_split) < 11:
-            raise ValueError("cannot setup Mate object from split, its too short")
+            raise ValueError(
+                "cannot setup Mate object from split, its too short"
+            )
         self.QNAME = line_split[0]
         self.FLAG = line_split[1]
         self.RNAME = line_split[2]
@@ -54,6 +55,7 @@ class SingleSamIterator(object):
             raise StopIteration
         self._read_1 = AlignedRead(self._read_1_line)
         return [self._read_1]
+
 
 class PairedSamIterator(object):
     def __init__(self, samfile_path, ref_seqs):

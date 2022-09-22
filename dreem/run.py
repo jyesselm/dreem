@@ -151,7 +151,7 @@ def main(**args):
     profiles that relate to DMS modification rates written by Silvi Rouskin and the
     Rouskin lab (https://www.rouskinlab.com/)
     """
-    logger.setup_applevel_logger(log_outfile="dreem.log", start=True)
+    logger.setup_applevel_logger(log_outfile="dreem.log")
     run(args)
 
 

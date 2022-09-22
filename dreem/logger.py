@@ -9,23 +9,13 @@ class DreemError(Exception):
     pass
 
 
-def setup_applevel_logger(
-    logger_name=APP_LOGGER_NAME,
-    log_outfile=None,
-    testing_mode=False,
-    start=False,
-) -> logging.Logger:
-    log_format = (
-        "[%(asctime)s "
-        "%(name)s "
-        "%(funcName)s] "
-        "%(levelname)s "
-        "%(message)s"
-    )
-    bold_seq = "\033[1m"
-    colorlog_format = f"{bold_seq}" "%(log_color)s" f"{log_format}"
-    logger = logging.getLogger(logger_name)
-    # colorlog.basicConfig(format=colorlog_format, datefmt="%H:%M")
+log_format = (
+    "[%(asctime)s " "%(name)s " "%(funcName)s] " "%(levelname)s " "%(message)s"
+)
+
+
+def get_stream_handler():
+    colorlog_format = f"%(log_color)s" f"{log_format}"
     handler = colorlog.StreamHandler()
     handler.setFormatter(
         colorlog.ColoredFormatter(
@@ -40,21 +30,25 @@ def setup_applevel_logger(
             },
         )
     )
-    logger.addHandler(handler)
+    return handler
 
+
+def get_file_handler(log_outfile):
+    fileHandler = logging.FileHandler(log_outfile, mode="w")
+    fileHandler.setFormatter(logging.Formatter(log_format))
+    return fileHandler
+
+
+def setup_applevel_logger(
+    logger_name=APP_LOGGER_NAME,
+    log_outfile=None,
+    is_debug=False
+) -> logging.Logger:
+    logger = logging.getLogger(logger_name)
+    logger.setLevel(logging.DEBUG if is_debug else logging.INFO)
+    logger.addHandler(get_stream_handler())
     if log_outfile is not None:
-        if start:
-            if os.path.isfile(log_outfile):
-                os.remove(log_outfile)
-        fileHandler = logging.FileHandler(log_outfile)
-        fileHandler.setFormatter(logging.Formatter(log_format))
-        logger.addHandler(fileHandler)
-
-    if testing_mode:
-        logger.setLevel(logging.DEBUG)
-    else:
-        logger.setLevel(logging.INFO)
-
+        logger.addHandler(get_file_handler(log_outfile))
     return logger
 
 

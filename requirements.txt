@@ -10,3 +10,4 @@ tabulate
 pyyaml
 future
 pytest
+kaleido

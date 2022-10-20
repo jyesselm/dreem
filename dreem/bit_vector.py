@@ -12,8 +12,6 @@ import plotly.graph_objs as go
 import plotly.io as pio 
 pio.kaleido.scope.chromium_args += ("--single-process",)
 from plotly.subplots import make_subplots
-import matplotlib
-import matplotlib.pyplot as plt
 import pandas as pd
 from tabulate import tabulate
 

@@ -9,7 +9,8 @@ from typing import Dict, List
 
 import plotly
 import plotly.graph_objs as go
-import plotly.io as pio 
+import plotly.io as pio
+
 pio.kaleido.scope.chromium_args += ("--single-process",)
 from plotly.subplots import make_subplots
 import pandas as pd

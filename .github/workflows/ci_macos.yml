@@ -33,8 +33,12 @@ jobs:
       - name: Run PyTest
         run: |
           python -m pytest
-      - name: Run Docker tests
+      - name: Run Docker test 1
         run: |
           python dreem/run_docker.py -fa test/resources/case_1/test.fasta -fq1 test/resources/case_1/test_mate1.fastq -fq2 test/resources/case_1/test_mate2.fastq --dot_bracket test/resources/case_1/test.csv
+      - name: Run Docker test 2
+        run: |
           python dreem/run_docker.py -fa test/resources/case_1/test.fasta -fq1 test/resources/case_1/test_mate1.fastq
+      - name: Check file output
+        run: |
           if [[ -f output/BitVector_Files/mttr-6-alt-h3_bitvectors.txt ]]; then exit 1; fi

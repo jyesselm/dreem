@@ -32,3 +32,7 @@ jobs:
       - name: Run PyTest
         run: |
           python -m pytest
+      - name: Run Docker tests
+        run: |
+          python dreem/run_docker.py -fa test/resources/case_1/test.fasta -fq1 test/resources/case_1/test_mate1.fastq -fq2 test/resources/case_1/test_mate2.fastq --dot_bracket test/resources/case_1/test.csv
+          python dreem/run_docker.py -fa test/resources/case_1/test.fasta -fq1 test/resources/case_1/test_mate1.fastq

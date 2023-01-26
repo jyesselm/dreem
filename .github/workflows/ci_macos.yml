@@ -1,0 +1,44 @@
+name: Build and Test for MacOS
+
+# Avoid running multiple jobs for the same branch
+# in case of updates.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on: [pull_request]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: docker-practice/actions-setup-docker@master
+      - name: Testing with version ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Build Docker Image
+        run: |
+          docker build -q -t dreem -f docker/Dockerfile .
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install future
+          pip install .
+      - name: Run PyTest
+        run: |
+          python -m pytest
+      - name: Run Docker test 1
+        run: |
+          python dreem/run_docker.py -fa test/resources/case_1/test.fasta -fq1 test/resources/case_1/test_mate1.fastq -fq2 test/resources/case_1/test_mate2.fastq --dot_bracket test/resources/case_1/test.csv
+      - name: Run Docker test 2
+        run: |
+          python dreem/run_docker.py -fa test/resources/case_1/test.fasta -fq1 test/resources/case_1/test_mate1.fastq
+      - name: Check file output
+        run: |
+          if [[ -f output/BitVector_Files/mttr-6-alt-h3_bitvectors.txt ]]; then exit 1; fi

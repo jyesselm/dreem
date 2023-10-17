@@ -93,7 +93,7 @@ def main(**args):
     profiles that relate to DMS modification rates written by Silvi Rouskin and the
     Rouskin lab (https://www.rouskinlab.com/)
     """
-    run(args)
+    return run(args)
 
 
 def run(args):

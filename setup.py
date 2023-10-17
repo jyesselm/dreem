@@ -57,9 +57,7 @@ setup(
     ],
     entry_points = {
         'console_scripts' : [
-            'dreem = dreem.run : main',
-            'dreem-docker = dreem.run_docker:main',
-            'dreem-multi = dreeem.run_multi:main'
+            'dreem = dreem.run:main'
         ]
     }
 )
